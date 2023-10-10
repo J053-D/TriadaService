@@ -1,88 +1,215 @@
 const fetch = require('cross-fetch');
 const express = require('express');
 const cron = require('node-cron');
-const app = express();
-const { port, frequence, masterKey, endpoint } = require('./config');
 const currentDate = new Date();
+const app = express();
+const { port,
+    frequence,
+    apiKey_bubble,
+    endpoint_bubble,
+    endpoint_discord,
+    authToken_discord,
+    guildId,
+    bannedRoleId,
+    adminRoleId,
+    endpoint_stripe,
+    apiKey_stripe,
+    userTest,
+    product_subscription,
+    product_renovation
+} = require('./config');
 
-function validateSubscription() {
-    let constraints = [
-        {
-            "key": "status",
-            "constraint_type": "equals",
-            "value": "Activo"
-        }
-    ]
-    fetch(`${endpoint}obj/User?constraints=${JSON.stringify(constraints)}`)
+
+//Funcion para actualizar el plan de Stripe (si tiene el plan inicial)
+function updateStripePlan() {
+    var myHeaders = new Headers();
+    myHeaders.append("Authorization", apiKey_stripe);
+
+    var requestOptions = {
+        method: 'GET',
+        headers: myHeaders,
+        redirect: 'follow'
+    };
+
+    let constraints_stripe = "status=active";
+
+    fetch(`${endpoint_stripe}subscriptions?${constraints_stripe}`, requestOptions)
         .then(res => {
             if (res.status >= 400) {
                 throw new Error("Bad response from server");
             }
             return res.json();
         })
-        .then(data => {
+        .then(subscritpion => {
+            subscritpion.data.forEach(data => {
 
-            data.response.results.forEach(element => {
-                if (element.subscription != null)
-                    fetch(`${endpoint}obj/Subscription/${element.subscription}`)
-                        .then(res => {
-                            if (res.status >= 400) {
-                                throw new Error("Bad response from server");
-                            }
-                            return res.json();
-                        })
-                        .then(res => {
-                            var expiryTime = new Date(res.response.nextPay);
+                // Convert Unix string to a Date variable
+                var subEndDate = new Date(parseInt(data.current_period_end) * 1000);
 
-                            if (currentDate.getTime() >= expiryTime.getTime()) {
+                // Extract the day from the date
+                var subEndDay = subEndDate.getDate();
 
-                                if (res.response.subscriptionType != "Renovation" && res.response.subscriptionType != "Trial") {
+                // Get the current day
+                var currentDate = new Date();
+                var currentDay = currentDate.getDate();
 
-                                    var myHeaders = new fetch.Headers();
-                                    myHeaders.append("Authorization", masterKey);
-                                    myHeaders.append("Content-Type", "application/json");
+                console.log(data);
+                if (data.plan.product === product_subscription) {
 
-                                    var raw = JSON.stringify({
-                                        "_id": element._id
-                                    });
+                    // Compare the Unix day with the current day
+                    // if (subEndDay === currentDay) {
 
-                                    var requestOptions = {
-                                        method: 'POST',
-                                        headers: myHeaders,
-                                        body: raw,
-                                        redirect: 'follow'
-                                    };
+                    //Update subscription plan
+                    var myHeaders = new Headers();
+                    myHeaders.append("Authorization", apiKey_stripe);
+                    myHeaders.append("Content-Type", "application/x-www-form-urlencoded");
 
-                                    fetch(`${endpoint}wf/createTrialSub/`, requestOptions)
-                                }
-                                else {
-                                    var myHeaders = new fetch.Headers();
-                                    myHeaders.append("Authorization", masterKey);
-                                    myHeaders.append("Content-Type", "application/json");
+                    var urlencoded = new URLSearchParams();
+                    urlencoded.append("plan", product_renovation);
 
-                                    var raw = JSON.stringify({
-                                        "status": "Inactivo"
-                                    });
+                    var requestOptions = {
+                        method: 'POST',
+                        headers: myHeaders,
+                        body: urlencoded,
+                        redirect: 'follow'
+                    };
 
-                                    var requestOptions = {
-                                        method: 'PATCH',
-                                        headers: myHeaders,
-                                        body: raw,
-                                        redirect: 'follow'
-                                    };
+                    fetch(`${endpoint_stripe}subscriptions/${data.id}`, requestOptions)
+                        .then(response => response.text())
+                        .then(result => console.log(result))
+                        .catch(error => console.log('error', error));
 
-                                    fetch(`${endpoint}obj/User/${element._id}`, requestOptions)
-                                }
 
-                            }
+                    // }
+
+                }
+            });
+        })
+}
+
+//Funcion asincrona que obtiene los usuarios de la BD de bubble individualmente
+async function getBubbleUsers(filter) {
+    let constraints = [
+        {
+            "key": "discordUserNick",
+            "constraint_type": "equals",
+            "value": filter.discord_user_name.toLowerCase()
+        },
+        {
+            "key": "status",
+            "constraint_type": "equals",
+            "value": "Activo"
+        }];
+
+    const response = await fetch(`${endpoint_bubble}obj/User?constraints=${JSON.stringify(constraints)}`)
+    const data = await response.json();
+    if (data.response.results)
+        return data.response.results[0];
+    /*         .then(res => {
+                if (res.status >= 400) {
+                    throw new Error("Bad response from server");
+                }
+                return res.json();
+            })
+            .then(data => {
+                return data.response.results[0];
+    
+            }); */
+}
+
+
+//Funcion que valida la lista de usuarios de discord comparandola con la de BD de bubble
+async function validateDiscordMembers() {
+    let lastUser = "";
+    let completed = false;
+    let filter = { "discord_user_name": "" };
+
+    /* do {
+
+    } while (!completed); */
+
+    var myHeaders = new Headers();
+    myHeaders.append("Authorization", authToken_discord);
+
+    var requestOptions = {
+        method: 'GET',
+        headers: myHeaders,
+        redirect: 'follow'
+    };
+
+    fetch(`${endpoint_discord}guilds/${guildId}/members?limit=1000`, requestOptions)
+        .then(response => response.json())
+        .then(data =>
+
+            data.forEach(async member => {
+                console.log("member: " + member.user.username);
+                if (!member.user.bot && !member.roles.includes(adminRoleId)) {
+                    filter.discord_user_name = member.user.username.toString();
+
+                    let user = await getBubbleUsers(filter);
+                    filter.discord_user_name = "";
+                    console.log("user: " + user);
+                    if (!user) {
+
+                        var myHeaders = new Headers();
+                        myHeaders.append("Authorization", authToken_discord);
+
+                        var requestOptions = {
+                            method: 'DELETE',
+                            headers: myHeaders,
+                            redirect: 'follow'
+                        };
+
+                        fetch(`${endpoint_discord}guilds/${guildId}/members/${member.user.id}`, requestOptions)
+                        //  .then(response => {
+                        console.log("user not found: " + member.user.username);
+                        //}).catch(error => console.log('error', error));
+                    }
+                    else if (member.user.id !== user.discordUserId) {
+
+                        //         /*Triada CHANGE DISCORD USER ID*/
+                        console.log(member.user.username + " : " + member.user.id, "is = " + user.discordUserId + " : " + user.discordUserNick);
+
+                        var myHeaders = new Headers();
+                        myHeaders.append("Authorization", apiKey_bubble);
+                        myHeaders.append("Content-Type", "application/json");
+
+                        var raw = JSON.stringify({
+                            "discordUserId": member.user.id
                         });
 
-            })
+                        var requestOptions = {
+                            method: 'PATCH',
+                            headers: myHeaders,
+                            body: raw,
+                            redirect: 'follow'
+                        };
 
-        });
+                        fetch(`${endpoint_bubble}obj/User/${user._id}`, requestOptions)
+                            .then(response => response.text())
+                            .then(result => console.log(result))
+                            .catch(error => console.log('error', error));
+
+                        //         /*Triada CHANGE DISCORD USER ID*/
+
+                    }
+                }
+
+            })
+        )
+        .catch(error => console.log('error', error));
+
+
 }
-validateSubscription()
-// cron.schedule(`${frequence}`, () => { validateSubscription() });
+
+function runServices() {
+    updateStripePlan();
+    validateDiscordMembers();
+}
+
+//updateStripePlan();
+// validateDiscordMembers();
+cron.schedule(`${frequence}`, () => { runServices() });
 //Idiomatic expression in express to route and respond to a client request
 app.get('/', (req, res) => {        //get requests to the root ("/") will route here
     res.sendFile('index.html', { root: __dirname });      //server responds by sending the index.html file to the client's browser
