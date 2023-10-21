@@ -10,7 +10,6 @@ module.exports = {
     authToken_discord: process.env.AUTHENTICATION_TOKEN,
 
     guildId: process.env.GUILD_ID,
-    bannedRoleId: process.env.BANNED_ROLE_ID,
     adminRoleId: process.env.ADMIN_ROLE_ID,
 
     ////////////////////////////////STRIPE////////////////////////////////
@@ -22,7 +21,6 @@ module.exports = {
     ////////////////////////////////SERVER CONFIG//////////////////////////////
     port: process.env.PORT,
     frequence: process.env.FREQUENCE,
-    userTest: process.env.USER_TEST,
 
 
 };

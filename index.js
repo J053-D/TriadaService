@@ -10,11 +10,9 @@ const { port,
     endpoint_discord,
     authToken_discord,
     guildId,
-    bannedRoleId,
     adminRoleId,
     endpoint_stripe,
     apiKey_stripe,
-    userTest,
     product_subscription,
     product_renovation
 } = require('./config');
@@ -209,7 +207,7 @@ function runServices() {
 
 //updateStripePlan();
 // validateDiscordMembers();
-cron.schedule(`${frequence}`, () => { runServices() });
+//cron.schedule(`${frequence}`, () => { runServices() });
 //Idiomatic expression in express to route and respond to a client request
 app.get('/', (req, res) => {        //get requests to the root ("/") will route here
     res.sendFile('index.html', { root: __dirname });      //server responds by sending the index.html file to the client's browser
