@@ -17,7 +17,6 @@ const { port,
     product_renovation
 } = require('./config');
 
-console.log("TEST DISC URL "+ endpoint_discord);
 //Funcion para actualizar el plan de Stripe (si tiene el plan inicial)
 function updateStripePlan() {
     var myHeaders = new Headers();
@@ -57,25 +56,25 @@ function updateStripePlan() {
                     // Compare the Unix day with the current day
                     if (subEndDay === currentDay) {
 
-                    //Update subscription plan
-                    var myHeaders = new Headers();
-                    myHeaders.append("Authorization", apiKey_stripe);
-                    myHeaders.append("Content-Type", "application/x-www-form-urlencoded");
+                        //Update subscription plan
+                        var myHeaders = new Headers();
+                        myHeaders.append("Authorization", apiKey_stripe);
+                        myHeaders.append("Content-Type", "application/x-www-form-urlencoded");
 
-                    var urlencoded = new URLSearchParams();
-                    urlencoded.append("plan", product_renovation);
+                        var urlencoded = new URLSearchParams();
+                        urlencoded.append("plan", product_renovation);
 
-                    var requestOptions = {
-                        method: 'POST',
-                        headers: myHeaders,
-                        body: urlencoded,
-                        redirect: 'follow'
-                    };
+                        var requestOptions = {
+                            method: 'POST',
+                            headers: myHeaders,
+                            body: urlencoded,
+                            redirect: 'follow'
+                        };
 
-                    fetch(`${endpoint_stripe}subscriptions/${data.id}`, requestOptions)
-                        .then(response => response.text())
-                        .then(result => console.log(result))
-                        .catch(error => console.log('error', error));
+                        fetch(`${endpoint_stripe}subscriptions/${data.id}`, requestOptions)
+                            .then(response => response.text())
+                            .then(result => console.log(result))
+                            .catch(error => console.log('error', error));
 
 
                     }
@@ -205,12 +204,16 @@ function runServices() {
     validateDiscordMembers();
 }
 
-//updateStripePlan();
-// validateDiscordMembers();
+function test() {
+    console.log("TEST DISC URL " + endpoint_discord);
+
+}
+
 //cron.schedule(`${frequence}`, () => { runServices() });
+cron.schedule(`${frequence}`, () => { test() });
 //Idiomatic expression in express to route and respond to a client request
 app.get('/', (req, res) => {        //get requests to the root ("/") will route here
-    res.sendFile('index.html', { root: __dirname });      //server responds by sending the index.html file to the client's browser
+    res.status(200).send();
     //the .sendFile method needs the absolute path to the file, see: https://expressjs.com/en/4x/api.html#res.sendFile 
 });
 
