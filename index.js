@@ -17,7 +17,7 @@ const { port,
     product_renovation
 } = require('./config');
 
-
+console.log("TEST DISC URL "+ endpoint_discord);
 //Funcion para actualizar el plan de Stripe (si tiene el plan inicial)
 function updateStripePlan() {
     var myHeaders = new Headers();
@@ -55,7 +55,7 @@ function updateStripePlan() {
                 if (data.plan.product === product_subscription) {
 
                     // Compare the Unix day with the current day
-                    // if (subEndDay === currentDay) {
+                    if (subEndDay === currentDay) {
 
                     //Update subscription plan
                     var myHeaders = new Headers();
@@ -78,7 +78,7 @@ function updateStripePlan() {
                         .catch(error => console.log('error', error));
 
 
-                    // }
+                    }
 
                 }
             });
