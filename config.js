@@ -20,7 +20,5 @@ module.exports = {
 
     ////////////////////////////////SERVER CONFIG//////////////////////////////
     port: process.env.PORT,
-    frequence: process.env.FREQUENCE,
-
 
 };
