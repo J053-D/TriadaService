@@ -1,10 +1,7 @@
 const fetch = require('cross-fetch');
 const express = require('express');
-const cron = require('node-cron');
-const currentDate = new Date();
 const app = express();
 const { port,
-    frequence,
     apiKey_bubble,
     endpoint_bubble,
     endpoint_discord,
@@ -204,16 +201,16 @@ function runServices() {
     validateDiscordMembers();
 }
 
-function test() {
-    console.log("TEST DISC URL " + endpoint_discord);
 
+
+function TEST() {
+    console.log("TEST DISC URL " + endpoint_discord);
+    return "OK"
 }
 
-//cron.schedule(`${frequence}`, () => { runServices() });
-cron.schedule(`${frequence}`, () => { test() });
 //Idiomatic expression in express to route and respond to a client request
 app.get('/', (req, res) => {        //get requests to the root ("/") will route here
-    res.status(200).send();
+    res.send(TEST());
     //the .sendFile method needs the absolute path to the file, see: https://expressjs.com/en/4x/api.html#res.sendFile 
 });
 
