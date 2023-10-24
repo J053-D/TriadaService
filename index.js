@@ -47,7 +47,6 @@ function updateStripePlan() {
                 var currentDate = new Date();
                 var currentDay = currentDate.getDate();
 
-                console.log(data);
                 if (data.plan.product === product_subscription) {
 
                     // Compare the Unix day with the current day
@@ -70,8 +69,8 @@ function updateStripePlan() {
 
                         fetch(`${endpoint_stripe}subscriptions/${data.id}`, requestOptions)
                             .then(response => response.text())
-                            .then(result => console.log(result))
-                            .catch(error => console.log('error', error));
+                            .then(result => console.log("Stripe User Plan Updated: " + result))
+                            .catch(error => console.log('Error Updating Stripe User Plan ', error));
 
 
                     }
@@ -99,16 +98,6 @@ async function getBubbleUsers(filter) {
     const data = await response.json();
     if (data.response.results)
         return data.response.results[0];
-    /*         .then(res => {
-                if (res.status >= 400) {
-                    throw new Error("Bad response from server");
-                }
-                return res.json();
-            })
-            .then(data => {
-                return data.response.results[0];
-    
-            }); */
 }
 
 
@@ -142,7 +131,6 @@ async function validateDiscordMembers() {
 
                     let user = await getBubbleUsers(filter);
                     filter.discord_user_name = "";
-                    console.log("user: " + user);
                     if (!user) {
 
                         var myHeaders = new Headers();
@@ -155,9 +143,9 @@ async function validateDiscordMembers() {
                         };
 
                         fetch(`${endpoint_discord}guilds/${guildId}/members/${member.user.id}`, requestOptions)
-                        //  .then(response => {
-                        console.log("user not found: " + member.user.username);
-                        //}).catch(error => console.log('error', error));
+                            .then(response => {
+                                console.log("Discord user not found: " + member.user.username);
+                            }).catch(error => console.log('error', error));
                     }
                     else if (member.user.id !== user.discordUserId) {
 
@@ -181,7 +169,7 @@ async function validateDiscordMembers() {
 
                         fetch(`${endpoint_bubble}obj/User/${user._id}`, requestOptions)
                             .then(response => response.text())
-                            .then(result => console.log(result))
+                            .then(result => console.log("Update Bubble user discUserId " + result))
                             .catch(error => console.log('error', error));
 
                         //         /*Triada CHANGE DISCORD USER ID*/
@@ -202,15 +190,10 @@ function runServices() {
 }
 
 
-
-function TEST() {
-    console.log("TEST DISC URL " + endpoint_discord);
-    return "OK"
-}
-
 //Idiomatic expression in express to route and respond to a client request
-app.get('/', (req, res) => {        //get requests to the root ("/") will route here
-    res.send(TEST());
+app.get('/', (req, res) => {
+    runServices();        //get requests to the root ("/") will route here
+    res.status(200).send();
     //the .sendFile method needs the absolute path to the file, see: https://expressjs.com/en/4x/api.html#res.sendFile 
 });
 
