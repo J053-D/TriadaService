@@ -1,4 +1,5 @@
 const fetch = require('cross-fetch');
+const { Headers } = fetch
 const express = require('express');
 const app = express();
 const { port,
@@ -125,7 +126,6 @@ async function validateDiscordMembers() {
         .then(data =>
 
             data.forEach(async member => {
-                console.log("member: " + member.user.username);
                 if (!member.user.bot && !member.roles.includes(adminRoleId)) {
                     filter.discord_user_name = member.user.username.toString();
 
@@ -169,7 +169,7 @@ async function validateDiscordMembers() {
 
                         fetch(`${endpoint_bubble}obj/User/${user._id}`, requestOptions)
                             .then(response => response.text())
-                            .then(result => console.log("Update Bubble user discUserId " + result))
+                            .then(result => console.log("Update Bubble user discUserId " + user))
                             .catch(error => console.log('error', error));
 
                         //         /*Triada CHANGE DISCORD USER ID*/
