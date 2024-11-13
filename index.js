@@ -17,20 +17,22 @@ const { port,
 
 //Funcion para actualizar el plan de Stripe (si tiene el plan inicial)
 function updateStripePlan() {
-    var myHeaders = new Headers();
-    myHeaders.append("Authorization", apiKey_stripe);
+    const myHeaders = new Headers();
+    myHeaders.append("Authorization", `Bearer ${apiKey_stripe}`);
 
-    var requestOptions = {
-        method: 'GET',
+    const requestOptions = {
+        method: "GET",
         headers: myHeaders,
-        redirect: 'follow'
+        redirect: "follow"
     };
 
     let constraints_stripe = "status=active";
 
-    fetch(`${endpoint_stripe}subscriptions?${constraints_stripe}`, requestOptions)
+    fetch(`${endpoint_stripe}/subscriptions?${constraints_stripe}`, requestOptions)
         .then(res => {
             if (res.status >= 400) {
+                console.log("Respuesta: ", res.data);
+
                 throw new Error("Bad response from server");
             }
             return res.json();
@@ -38,43 +40,28 @@ function updateStripePlan() {
         .then(subscritpion => {
             subscritpion.data.forEach(data => {
 
-                // Convert Unix string to a Date variable
-                var subEndDate = new Date(parseInt(data.current_period_end) * 1000);
-
-                // Extract the day from the date
-                var subEndDay = subEndDate.getDate();
-
-                // Get the current day
-                var currentDate = new Date();
-                var currentDay = currentDate.getDate();
-
                 if (data.plan.product === product_subscription) {
 
-                    // Compare the Unix day with the current day
-                    if (subEndDay === currentDay) {
+                    //Update subscription plan
+                    var myHeaders = new Headers();
+                    myHeaders.append("Authorization", `Bearer ${apiKey_stripe}`);
+                    myHeaders.append("Content-Type", "application/x-www-form-urlencoded");
 
-                        //Update subscription plan
-                        var myHeaders = new Headers();
-                        myHeaders.append("Authorization", apiKey_stripe);
-                        myHeaders.append("Content-Type", "application/x-www-form-urlencoded");
+                    var urlencoded = new URLSearchParams();
+                    urlencoded.append("plan", product_renovation); // Este es el plan o price_id nuevo
+                    urlencoded.append("proration_behavior", "none"); // Configuración de prorrateo ('create_prorations', 'none', o 'always_invoice')
 
-                        var urlencoded = new URLSearchParams();
-                        urlencoded.append("plan", product_renovation);
+                    var requestOptions = {
+                        method: 'POST',
+                        headers: myHeaders,
+                        body: urlencoded,
+                        redirect: 'follow'
+                    };
 
-                        var requestOptions = {
-                            method: 'POST',
-                            headers: myHeaders,
-                            body: urlencoded,
-                            redirect: 'follow'
-                        };
-
-                        fetch(`${endpoint_stripe}subscriptions/${data.id}`, requestOptions)
-                            .then(response => response.text())
-                            .then(result => console.log("Stripe User Plan Updated: " + result))
-                            .catch(error => console.log('Error Updating Stripe User Plan ', error));
-
-
-                    }
+                    fetch(`${endpoint_stripe}/subscriptions/${data.id}`, requestOptions)
+                        .then(response => response.text())
+                        .then(result => console.log("Stripe User Plan Updated: " + result))
+                        .catch(error => console.log('Error Updating Stripe User Plan ', error));
 
                 }
             });
@@ -185,9 +172,8 @@ async function validateDiscordMembers() {
 }
 
 function runServices() {
-    console.log(apiKey_bubble);
-    
-    // updateStripePlan();
+
+    updateStripePlan();
     // validateDiscordMembers();
 }
 
@@ -202,3 +188,4 @@ app.get('/', (req, res) => {
 app.listen(port, () => {            //server starts listening for any attempts from a client to connect at port: {port}
     console.log(`Now listening on port ${port}`);
 });
+
