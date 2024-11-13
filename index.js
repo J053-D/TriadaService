@@ -185,8 +185,10 @@ async function validateDiscordMembers() {
 }
 
 function runServices() {
-    updateStripePlan();
-    validateDiscordMembers();
+    console.log(apiKey_bubble);
+    
+    // updateStripePlan();
+    // validateDiscordMembers();
 }
 
 
